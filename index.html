@@ -16,8 +16,8 @@
     #siriish {
       background: #222;
       border-radius: 20px;
-      width: 95%;
-      height: 95%;
+      width: 90%;
+      height: 90%;
       display: flex;
       flex-direction: column;
       padding: 20px;
@@ -34,6 +34,104 @@
       background: #111;
       border-radius: 12px;
       padding: 15px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+    }
+    #conversation div {
+      margin: 8px 0;
+    }
+    #inputBar {
+      display: flex;
+      gap: 10px;
+    }
+    #inputBar input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: #333;
+      color: #eee;
+    }
+    #inputBar button {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      background: #555;
+      color: #fff;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="siriish">
+    <div id="header">Siri‑ish Assistant</div>
+    <div id="conversation"></div>
+    <div id="inputBar">
+      <input id="cmd" placeholder="Ask me something…" />
+      <button onclick="ask()">Ask</button>
+    </div>
+  </div>
+
+  <script>
+    const convo = document.getElementById("conversation");
+
+    function addLine(text, who="Siri‑ish") {
+      const div = document.createElement("div");
+      div.textContent = who + ": " + text;
+      convo.appendChild(div);
+      convo.scrollTop = convo.scrollHeight;
+    }
+
+    async function ask() {
+      const cmd = document.getElementById("cmd").value.trim();
+      if (!cmd) return;
+
+      addLine(cmd, "You");
+
+      let endpoint = "https://still-cell-3b8a.thcorporation8.workers.dev";
+      if (cmd.toLowerCase().includes("real joke")) {
+        endpoint += "?action=real_joke";
+      } else if (cmd.toLowerCase().includes("real roast")) {
+        endpoint += "?action=real_roast";
+      }
+
+      try {
+        const res = await fetch(endpoint);
+        const contentType = res.headers.get("Content-Type");
+
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          const lower = cmd.toLowerCase();
+          let reply;
+
+          // Explicit keyword logic (like your gist)
+          if (lower.includes("hi") || lower.includes("hello") || lower.includes("hey")) {
+            reply = data.greeting[Math.floor(Math.random() * data.greeting.length)];
+          } else if (lower.includes("who") || lower.includes("identity")) {
+            reply = data.identity[Math.floor(Math.random() * data.identity.length)];
+          } else if (lower.includes("joke")) {
+            reply = data.joke[Math.floor(Math.random() * data.joke.length)];
+          } else if (lower.includes("roast")) {
+            reply = data.roast[Math.floor(Math.random() * data.roast.length)];
+          } else {
+            reply = data.fallback[Math.floor(Math.random() * data.fallback.length)];
+          }
+
+          addLine(reply);
+        } else {
+          // For real joke/roast plain text responses
+          const text = await res.text();
+          addLine(text);
+        }
+      } catch (err) {
+        addLine("Error contacting Siri‑ish Worker: " + err.message);
+      }
+
+      document.getElementById("cmd").value = "";
+    }
+  </script>
+</body>
+</html>
       overflow-y: auto;
       margin-bottom: 15px;
     }
