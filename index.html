@@ -138,6 +138,110 @@
   </script>
 </body>
 </html>
+      border-bottom-right-radius: 4px;
+    }
+
+    .assistant {
+      align-self: flex-start;
+      background: #e8eaed;
+      color: #202124;
+      border-bottom-left-radius: 4px;
+    }
+
+    #inputBar {
+      display: flex;
+      padding: 12px;
+      background: #fff;
+      border-top: 1px solid #dadce0;
+    }
+
+    #inputBar input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 24px;
+      border: 1px solid #dadce0;
+      outline: none;
+      font-size: 15px;
+    }
+
+    #inputBar button {
+      margin-left: 8px;
+      padding: 0 20px;
+      border-radius: 24px;
+      border: none;
+      background: #1a73e8;
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="conversation"></div>
+  <div id="inputBar">
+    <input id="cmd" placeholder="Talk to Siri‑ish…" />
+    <button onclick="ask()">Send</button>
+  </div>
+
+  <script>
+    const convo = document.getElementById("conversation");
+
+    function addLine(text, who="assistant") {
+      const div = document.createElement("div");
+      div.className = "bubble " + who;
+      div.textContent = text;
+      convo.appendChild(div);
+      convo.scrollTop = convo.scrollHeight;
+    }
+
+    async function ask() {
+      const cmd = document.getElementById("cmd").value.trim();
+      if (!cmd) return;
+
+      addLine(cmd, "user");
+
+      let endpoint = "https://still-cell-3b8a.thcorporation8.workers.dev";
+      if (cmd.toLowerCase().includes("real joke")) {
+        endpoint += "?action=real_joke";
+      } else if (cmd.toLowerCase().includes("real roast")) {
+        endpoint += "?action=real_roast";
+      }
+
+      try {
+        const res = await fetch(endpoint);
+        const contentType = res.headers.get("Content-Type");
+
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          const lower = cmd.toLowerCase();
+          let reply;
+
+          if (lower.includes("hi") || lower.includes("hello") || lower.includes("hey")) {
+            reply = data.greeting[Math.floor(Math.random() * data.greeting.length)];
+          } else if (lower.includes("who") || lower.includes("identity")) {
+            reply = data.identity[Math.floor(Math.random() * data.identity.length)];
+          } else if (lower.includes("joke")) {
+            reply = data.joke[Math.floor(Math.random() * data.joke.length)];
+          } else if (lower.includes("roast")) {
+            reply = data.roast[Math.floor(Math.random() * data.roast.length)];
+          } else {
+            reply = data.fallback[Math.floor(Math.random() * data.fallback.length)];
+          }
+
+          addLine(reply, "assistant");
+        } else {
+          const text = await res.text();
+          addLine(text, "assistant");
+        }
+      } catch (err) {
+        addLine("Error contacting Siri‑ish Worker: " + err.message, "assistant");
+      }
+
+      document.getElementById("cmd").value = "";
+    }
+  </script>
+</body>
+</html>
       overflow-y: auto;
       margin-bottom: 15px;
     }
