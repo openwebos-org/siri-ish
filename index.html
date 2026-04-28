@@ -1,16 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8" />
   <title>Siri‑ish Assistant</title>
   <style>
-    body {
+    :root {
+      --bg: #f5f5f5;
+      --text: #202124;
+      --primary: #1a73e8;
+      --muted: #e8eaed;
+      --card: #fff;
+      --border: #dadce0;
+    }
+
+    html, body {
+      height: 100%;
       margin: 0;
-      font-family: "Google Sans", "Segoe UI", sans-serif;
-      background: #f5f5f5;
-      color: #202124;
+      font-family: "Google Sans", "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    #app {
       height: 100vh;
       display: flex;
       flex-direction: column;
+      max-width: 900px;
+      margin: 0 auto;
+      box-sizing: border-box;
     }
 
     #conversation {
@@ -20,6 +37,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      margin-bottom: 8px;
     }
 
     .bubble {
@@ -28,12 +46,142 @@
       border-radius: 18px;
       line-height: 1.4;
       font-size: 15px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+      word-break: break-word;
     }
 
     .user {
       align-self: flex-end;
-      background: #1a73e8;
+      background: var(--primary);
       color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .assistant {
+      align-self: flex-start;
+      background: var(--muted);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    #inputBar {
+      display: flex;
+      padding: 12px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      gap: 8px;
+    }
+
+    #cmd {
+      flex: 1;
+      padding: 12px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      outline: none;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    #sendBtn {
+      padding: 10px 18px;
+      border-radius: 24px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 480px) {
+      .bubble { max-width: 90%; }
+      #app { padding: 0 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="conversation" role="log" aria-live="polite"></div>
+
+    <div id="inputBar">
+      <input id="cmd" placeholder="Talk to Siri‑ish…" autocomplete="off" />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const convo = document.getElementById("conversation");
+    const cmdInput = document.getElementById("cmd");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function addLine(text, who = "assistant") {
+      const div = document.createElement("div");
+      div.className = "bubble " + who;
+      // allow line breaks for multi-line responses
+      div.innerText = text;
+      convo.appendChild(div);
+      convo.scrollTop = convo.scrollHeight;
+    }
+
+    async function ask() {
+      const cmd = cmdInput.value.trim();
+      if (!cmd) return;
+      addLine(cmd, "user");
+
+      let endpoint = "https://still-cell-3b8a.thcorporation8.workers.dev";
+      const lower = cmd.toLowerCase();
+      if (lower.includes("real joke")) endpoint += "?action=real_joke";
+      else if (lower.includes("real roast")) endpoint += "?action=real_roast";
+
+      try {
+        const res = await fetch(endpoint);
+        const contentType = res.headers.get("content-type") || "";
+
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          let reply;
+
+          if (lower.includes("hi") || lower.includes("hello") || lower.includes("hey")) {
+            reply = pickRandom(data.greeting);
+          } else if (lower.includes("who") || lower.includes("identity")) {
+            reply = pickRandom(data.identity);
+          } else if (lower.includes("joke")) {
+            reply = pickRandom(data.joke);
+          } else if (lower.includes("roast")) {
+            reply = pickRandom(data.roast);
+          } else {
+            reply = pickRandom(data.fallback);
+          }
+
+          addLine(reply, "assistant");
+        } else {
+          // plain text responses (used by real_joke / real_roast endpoints)
+          const text = await res.text();
+          addLine(text, "assistant");
+        }
+      } catch (err) {
+        addLine("Error contacting Siri‑ish Worker: " + (err.message || err), "assistant");
+      }
+
+      cmdInput.value = "";
+      cmdInput.focus();
+    }
+
+    function pickRandom(arr) {
+      if (!Array.isArray(arr) || arr.length === 0) return "";
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    // send on button click or Enter
+    sendBtn.addEventListener("click", ask);
+    cmdInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        ask();
+      }
+    });
+  </script>
+</body>
+</html>
       border-bottom-right-radius: 4px;
     }
 
